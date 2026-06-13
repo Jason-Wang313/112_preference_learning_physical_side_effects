@@ -2,21 +2,25 @@
 
         Paper: 112 Preference Learning Physical Side Effects
 
-        ## Strongest Prior-Work Threats
+        ## Strongest Technical Threats
         - APRICOT: Active Preference Learning and Constraint-Aware Task Planning with LLMs (2024)
 - Unified Learning from Demonstrations, Corrections, and Preferences during Physical Human-Robot Interaction (2024)
 - DriveLLaVA: Human-Level Behavior Decisions via Vision Language Model (2024)
 - Preference-Based Assistance Prediction for Human-Robot Collaboration Tasks (2018)
 - Are physically embodied social agents better than disembodied social agents?: The effects of physical embodiment, tactile interaction, and people's loneliness in human-robot interaction (2006)
 - A User Study on Personalized Stiffness Control and Task Specificity in Physical Human-Robot Interaction (2017)
+- An analysis of task assignment and cycle times when robots are added to human-operated assembly lines, using mathematical programming models (2021)
+- Warmth and Competence to Predict Human Preference of Robot Behavior in Physical Human-Robot Interaction (2020)
 
-        ## Response
-        The paper no longer claims that generic world modeling, generic uncertainty, or larger datasets are novel. The defensible contribution is the combination of explicit unrealized physical branches, a tail-risk objective over those branches, diagnostic probing, and failure memory.
+        ## ICLR Main Response
+        A hostile ICLR reviewer would be correct to reject this as a main-conference submission. The v2 paper has reproducible synthetic evidence and careful limitations, but it does not contain the real robot, high-fidelity simulator, learned model, or manual related-work depth needed for the ICLR main track.
 
-        ## What Is Not Claimed
-        - No real-robot state of the art.
-        - No proof that the branch atlas can always discover the true hidden mode.
-        - No claim that advisor-name matches imply relevance.
+        ## Honest Action
+        The paper is marked `KILL_ARCHIVE`. This avoids converting a generated workshop-style idea into an overstated main-conference claim.
 
-        ## Remaining Reviewer Risk
-        A main-conference reviewer can still reject the work for synthetic-only evidence. The correct venue state is `WORKSHOP_ONLY` until hardware or high-fidelity simulation validation is added.
+        ## What Would Be Needed To Revive
+        - Real robot or high-fidelity benchmark experiments.
+        - Implemented model and baselines, not synthetic probability tables.
+        - Manual full-paper related-work audit.
+        - Paper-specific writing and figures.
+        - Evidence that the core mechanism is learned and useful under deployment shift.
