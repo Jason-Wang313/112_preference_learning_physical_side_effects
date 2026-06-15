@@ -2,4 +2,8 @@ case,stress_split,observed_failure,success_rate,lesson
 hidden_material_damage,combined_stress,RGB-visible success hides internal scuffing,0.414,needs tactile or material-state validation
 preference_disagreement,unseen_side_effect,humans disagree on acceptable clutter,0.438,requires real human label variance
 benign_physical_change,unseen_object,model over-penalizes harmless displacement,0.446,calibration guard matters
+labeler_risk_tolerance_shift,seen_shift,different labelers rank the same side effect differently,0.429,requires label-disagreement modeling and calibration
+delayed_side_effect_visibility,combined_stress,workspace disruption appears after the preference comparison window,0.417,needs delayed-effect rollouts and longer-horizon labels
+tactile_only_damage,unseen_side_effect,surface damage is tactile/material-only and invisible to RGB preference features,0.405,needs tactile/material-state sensing
+overcautious_rejection,unseen_object,model rejects useful actions because benign displacement resembles clutter,0.436,needs calibrated benign-change exceptions
 oracle_gap,combined_stress,oracle side-effect judge remains better,0.581,mechanism useful but not saturated

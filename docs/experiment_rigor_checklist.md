@@ -5,7 +5,8 @@
 - [x] Multiple physical side-effect regimes.
 - [x] Side-effect recall, violation, damage, false alarm, query cost, and regret reported.
 - [x] Ablations target core preference components.
-- [x] Failure cases documented.
+- [x] Stress sweep includes task/regime/seed detail.
+- [x] Eight failure cases documented.
 - [ ] Real human preference labels.
 - [ ] Robot or high-fidelity validation.
 - [ ] Label-disagreement study.

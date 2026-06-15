@@ -15,3 +15,7 @@ Response: Correct. This is why the decision is `STRONG_REVISE`, not ready accept
 ## Attack: Human preferences may disagree.
 
 Response: Correct. Real submission needs label-variance and disagreement analysis.
+
+## Attack: The stress and failure analysis is too thin.
+
+Response: v4.1 expands the stress audit to 7,350 task/regime/seed rows and 8 failure cases. This improves local rigor but still does not replace real labels or robot/high-fidelity validation.
