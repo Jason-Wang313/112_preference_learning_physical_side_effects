@@ -1,16 +1,51 @@
-Submission-hardening experiment for paper 112 preference_learning_physical_side_effects
-Seven seeds, 600 episodes per seed, strong baselines, ablations, stress sweep, and negative cases.
-observed_only_behavior_clone hidden_mode_shift mean_success=0.4083 ci95=0.0203 tail=0.5917
-observed_only_behavior_clone combined_stress mean_success=0.3302 ci95=0.0052 tail=0.6698
-data_augmentation_wam hidden_mode_shift mean_success=0.4931 ci95=0.0150 tail=0.5069
-data_augmentation_wam combined_stress mean_success=0.4250 ci95=0.0214 tail=0.5750
-scalar_uncertainty_planner hidden_mode_shift mean_success=0.5533 ci95=0.0122 tail=0.4467
-scalar_uncertainty_planner combined_stress mean_success=0.4926 ci95=0.0188 tail=0.5074
-ensemble_disagreement_planner hidden_mode_shift mean_success=0.6038 ci95=0.0096 tail=0.3962
-ensemble_disagreement_planner combined_stress mean_success=0.5538 ci95=0.0059 tail=0.4462
-conformal_risk_filter hidden_mode_shift mean_success=0.6143 ci95=0.0074 tail=0.3857
-conformal_risk_filter combined_stress mean_success=0.5710 ci95=0.0183 tail=0.4290
-proposed_branch_mechanism hidden_mode_shift mean_success=0.7000 ci95=0.0122 tail=0.3000
-proposed_branch_mechanism combined_stress mean_success=0.6529 ci95=0.0153 tail=0.3471
-oracle_branch_upper_bound hidden_mode_shift mean_success=0.7636 ci95=0.0100 tail=0.2364
-oracle_branch_upper_bound combined_stress mean_success=0.7336 ci95=0.0139 tail=0.2664
+Paper 112 preference_learning_physical_side_effects evidence rebuild
+Design: 5 tasks x 7 side-effect regimes x 5 splits x 9 methods, 7 seeds, 84 episodes/group.
+Terminal decision: STRONG_REVISE
+Rationale: local physical-side-effect preference evidence supports the mechanism only if all gates pass; real human-label/robot validation remains missing.
+
+Combined-stress ranking:
+oracle_side_effect_preference_judge: success=0.672 +/- 0.007, side_effect_recall=0.672, violation=0.016, damage=0.033, false_alarm=0.061, query_cost=0.205, regret=0.000
+proposed_side_effect_preference_model: success=0.581 +/- 0.007, side_effect_recall=0.601, violation=0.048, damage=0.047, false_alarm=0.085, query_cost=0.228, regret=0.091
+side_effect_classifier_baseline: success=0.515 +/- 0.006, side_effect_recall=0.469, violation=0.092, damage=0.066, false_alarm=0.097, query_cost=0.268, regret=0.157
+constraint_aware_planner: success=0.494 +/- 0.011, side_effect_recall=0.405, violation=0.104, damage=0.063, false_alarm=0.105, query_cost=0.278, regret=0.178
+failure_prediction_shield: success=0.487 +/- 0.009, side_effect_recall=0.385, violation=0.114, damage=0.071, false_alarm=0.098, query_cost=0.258, regret=0.185
+uncertainty_query_preference_learner: success=0.485 +/- 0.008, side_effect_recall=0.397, violation=0.121, damage=0.080, false_alarm=0.087, query_cost=0.352, regret=0.187
+reward_model_rlhf_surrogate: success=0.476 +/- 0.007, side_effect_recall=0.310, violation=0.144, damage=0.090, false_alarm=0.085, query_cost=0.211, regret=0.196
+generic_pairwise_preference_model: success=0.456 +/- 0.007, side_effect_recall=0.283, violation=0.153, damage=0.094, false_alarm=0.082, query_cost=0.201, regret=0.216
+success_only_policy: success=0.398 +/- 0.008, side_effect_recall=0.154, violation=0.192, damage=0.110, false_alarm=0.061, query_cost=0.086, regret=0.274
+
+Gate outcomes:
+success_gate: True
+diagnostic_gate: True
+safety_gate: True
+pairwise_gate: True
+ablation_gate: True
+success_margin_vs_strongest: 0.06579203109815357
+side_effect_recall_delta_vs_strongest: 0.1319575538507476
+side_effect_violation_delta_vs_strongest: -0.044068727418132225
+damage_rate_delta_vs_strongest: -0.01845801381992363
+false_alarm_delta_vs_strongest: -0.012380650709042956
+query_cost_delta_vs_strongest: -0.04063999999999987
+ablation_margin_vs_best_removed_component: 0.023955296404276072
+strongest_non_oracle_baseline: side_effect_classifier_baseline
+best_removed_component: minus_ambiguous_query_selector
+oracle_success: 0.672
+
+Pairwise proposed comparisons:
+constraint_aware_planner: diff=0.087 +/- 0.012, wins=7/7, decision=proposed_better
+failure_prediction_shield: diff=0.094 +/- 0.011, wins=7/7, decision=proposed_better
+generic_pairwise_preference_model: diff=0.125 +/- 0.011, wins=7/7, decision=proposed_better
+oracle_side_effect_preference_judge: diff=-0.091 +/- 0.012, wins=0/7, decision=not_decisive
+reward_model_rlhf_surrogate: diff=0.105 +/- 0.012, wins=7/7, decision=proposed_better
+side_effect_classifier_baseline: diff=0.066 +/- 0.010, wins=7/7, decision=proposed_better
+success_only_policy: diff=0.183 +/- 0.005, wins=7/7, decision=proposed_better
+uncertainty_query_preference_learner: diff=0.096 +/- 0.012, wins=7/7, decision=proposed_better
+
+Ablations:
+full_side_effect_preference_model: success=0.574 +/- 0.008, recall=0.602, violation=0.048, damage=0.047, note=all components
+minus_ambiguous_query_selector: success=0.550 +/- 0.004, recall=0.515, violation=0.072, damage=0.056, note=wastes labels on easy success/failure comparisons
+minus_counterfactual_labels: success=0.549 +/- 0.008, recall=0.531, violation=0.070, damage=0.056, note=cannot separate successful trajectories with different physical costs
+minus_calibration_guard: success=0.548 +/- 0.010, recall=0.528, violation=0.088, damage=0.058, note=over-constrains benign physical changes
+minus_constraint_aggregator: success=0.546 +/- 0.006, recall=0.526, violation=0.086, damage=0.075, note=mixes task preference and side-effect aversion
+side_effect_classifier_only: success=0.520 +/- 0.008, recall=0.469, violation=0.092, damage=0.066, note=side-effect classifier baseline
+minus_side_effect_taxonomy: success=0.517 +/- 0.009, recall=0.407, violation=0.092, damage=0.056, note=collapses side effects into generic preference labels

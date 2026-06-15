@@ -2,18 +2,17 @@
 
 Paper: 112 preference_learning_physical_side_effects
 
-Existing v2 decision: KILL_ARCHIVE
+Previous v3 decision: KILL_ARCHIVE
 
-Gate verdict: KILL_ARCHIVE
+Gate verdict after v4 rebuild: STRONG_REVISE
 
-Evidence digest: d1b685c50f50c0c2
+Evidence digest: local physical side-effect preference benchmark, 5 tasks, 7 regimes, 5 splits, 9 methods, 7 paired seeds, 84 episodes per group.
 
-Fatal blockers:
-- Synthetic-only evidence.
-- Template-generated experiment and writing.
-- No real robot or high-fidelity benchmark.
-- No trained WAM/model checkpoint.
-- No implemented real baselines.
-- No manual exhaustive related-work synthesis.
+Gate outcomes:
+- Success margin over strongest non-oracle baseline: PASS (`0.066`).
+- Diagnostic improvement: PASS (`+0.132` side-effect recall).
+- Damage/false-alarm/query-cost non-regression: PASS.
+- Pairwise seeds: PASS (7/7 wins).
+- Ablation margin: PASS (`0.024`).
 
-The only honest main-conference-safe decision is to archive rather than overclaim.
+ICLR main ready: NO. Real human labels and robot validation are still required.

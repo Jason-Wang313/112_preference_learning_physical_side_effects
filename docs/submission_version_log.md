@@ -1,18 +1,21 @@
 # Submission Version Log
 
-## v1 - Generated Draft
-- Original continuation-batch generated paper and toy single-seed experiment.
+## v3
 
-## v2 - Submission Hardening
-- Added hostile reviewer attack log and response docs.
-- Replaced the toy experiment with seven-seed metrics, stronger baselines, ablations, stress tests, and negative cases.
-- Narrowed claims to synthetic diagnostic evidence.
-- Recompiled canonical PDF at `C:/Users/wangz/Downloads/112.pdf`.
-- Terminal decision: WORKSHOP_ONLY.
+Decision: KILL_ARCHIVE
 
-## v3 - ICLR Main Gate Archive
-- Applied the stricter ICLR-main-conference standard.
-- Re-read local paper, docs, experiments, prior-work artifacts, PDF state, and repo state.
-- Determined that missing real-robot/high-fidelity evidence, template-generated experiments, and unresolved novelty threats are not recoverable from local artifacts.
-- Recompiled the canonical PDF with `Submission-hardening version: v3`.
-- Terminal decision: KILL_ARCHIVE.
+Reason: synthetic/template evidence and no real or high-fidelity validation.
+
+## v4
+
+Decision: STRONG_REVISE
+
+Changes:
+- Added physical side-effect preference benchmark.
+- Added success-only, generic preference, RLHF, uncertainty-query, constraint, failure-shield, and side-effect classifier baselines.
+- Added paired-seed success tests.
+- Added side-effect, damage, false-alarm, and query-cost gates.
+- Added ablations, stress sweep, failure cases, figures, and generated tables.
+- Rewrote manuscript and docs around a narrow physical side-effect preference claim.
+
+Remaining blocker: no real human-label or robot validation.

@@ -1,6 +1,15 @@
 # Claims
 
-- Mechanism claim: Preference learning physical side effects keeps action-critical alternatives explicit until a physical observation collapses them.
-- Evidence claim: the included synthetic experiment tests hidden physical-mode perturbations and compares observed-only, augmented-data, uncertainty, and proposed variants.
-- Scope claim: results support mechanism plausibility, not real-robot deployment.
-- Unsupported claim explicitly avoided: no claim of SOTA robot performance.
+## Supported Locally
+
+- Generic task-success or pairwise preference learning misses physical side effects.
+- Explicit side-effect preference modeling improves success and side-effect recall over classifier, constraint, uncertainty-query, RLHF, and success-only baselines.
+- The gain is not purchased with higher damage, false alarms, or query cost versus the strongest non-oracle baseline.
+- Taxonomy, counterfactual labels, ambiguous query selection, constraint aggregation, and calibration each contribute.
+
+## Not Claimed
+
+- Real human preference validation.
+- Hardware-safe deployment.
+- General RLHF superiority.
+- Complete moral or social preference modeling.
