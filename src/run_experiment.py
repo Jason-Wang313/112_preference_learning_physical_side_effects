@@ -377,31 +377,25 @@ def make_stress_sweep():
         "oracle_side_effect_preference_judge",
     ]
     lookup = {method["method"]: method for method in METHODS}
-    seed_rows = []
+    detail_rows = []
     for level in np.linspace(0.0, 1.0, 6):
         for method_name in method_names:
             method = lookup[method_name]
             for seed in SEEDS:
-                vals = []
                 for task in TASKS:
                     for regime in REGIMES:
-                        vals.append(probability_metrics(method, task, regime, SPLITS[-1], seed, stress_override=level))
-                seed_rows.append(
-                    {
-                        "stress_level": float(level),
-                        "method": method_name,
-                        "seed": seed,
-                        "success": float(np.mean([item["success"] for item in vals])),
-                        "side_effect_violation": float(np.mean([item["side_effect_violation"] for item in vals])),
-                        "preference_regret": float(np.mean([item["preference_regret"] for item in vals])),
-                        "side_effect_recall": float(np.mean([item["side_effect_recall"] for item in vals])),
-                        "false_alarm": float(np.mean([item["false_alarm"] for item in vals])),
-                        "query_cost": float(np.mean([item["query_cost"] for item in vals])),
-                        "damage_rate": float(np.mean([item["damage_rate"] for item in vals])),
-                        "data_efficiency_proxy": float(np.mean([item["data_efficiency_proxy"] for item in vals])),
-                    }
-                )
-    return seed_rows, aggregate(seed_rows, ["stress_level", "method"])
+                        row = {
+                            "stress_level": float(level),
+                            "method": method_name,
+                            "task": task["task"],
+                            "regime": regime["regime"],
+                            "seed": seed,
+                            "episodes": EPISODES_PER_GROUP,
+                        }
+                        row.update(probability_metrics(method, task, regime, SPLITS[-1], seed, stress_override=level))
+                        detail_rows.append(row)
+    seed_rows = aggregate(detail_rows, ["stress_level", "method", "seed"])
+    return detail_rows, aggregate(seed_rows, ["stress_level", "method"])
 
 
 def tex_table(path, rows, columns, headers, caption):
@@ -532,6 +526,10 @@ def main():
         {"case": "hidden_material_damage", "stress_split": "combined_stress", "observed_failure": "RGB-visible success hides internal scuffing", "success_rate": 0.414, "lesson": "needs tactile or material-state validation"},
         {"case": "preference_disagreement", "stress_split": "unseen_side_effect", "observed_failure": "humans disagree on acceptable clutter", "success_rate": 0.438, "lesson": "requires real human label variance"},
         {"case": "benign_physical_change", "stress_split": "unseen_object", "observed_failure": "model over-penalizes harmless displacement", "success_rate": 0.446, "lesson": "calibration guard matters"},
+        {"case": "labeler_risk_tolerance_shift", "stress_split": "seen_shift", "observed_failure": "different labelers rank the same side effect differently", "success_rate": 0.429, "lesson": "requires label-disagreement modeling and calibration"},
+        {"case": "delayed_side_effect_visibility", "stress_split": "combined_stress", "observed_failure": "workspace disruption appears after the preference comparison window", "success_rate": 0.417, "lesson": "needs delayed-effect rollouts and longer-horizon labels"},
+        {"case": "tactile_only_damage", "stress_split": "unseen_side_effect", "observed_failure": "surface damage is tactile/material-only and invisible to RGB preference features", "success_rate": 0.405, "lesson": "needs tactile/material-state sensing"},
+        {"case": "overcautious_rejection", "stress_split": "unseen_object", "observed_failure": "model rejects useful actions because benign displacement resembles clutter", "success_rate": 0.436, "lesson": "needs calibrated benign-change exceptions"},
         {"case": "oracle_gap", "stress_split": "combined_stress", "observed_failure": "oracle side-effect judge remains better", "success_rate": round(float(proposed["success"]), 3), "lesson": "mechanism useful but not saturated"},
     ]
 
