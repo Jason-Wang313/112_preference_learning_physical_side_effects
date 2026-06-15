@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\caption{Ablation results under combined side-effect stress.}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+Ablation & Succ. & CI & Recall & Violation & Damage & FalseAlarm \\
+\midrule
+Full & 0.574 & 0.008 & 0.602 & 0.048 & 0.047 & 0.085 \\
+NoQuerySel & 0.550 & 0.004 & 0.515 & 0.072 & 0.056 & 0.096 \\
+NoCounterfactual & 0.549 & 0.008 & 0.531 & 0.070 & 0.056 & 0.094 \\
+NoCalib & 0.548 & 0.010 & 0.528 & 0.088 & 0.058 & 0.137 \\
+NoAggregator & 0.546 & 0.006 & 0.526 & 0.086 & 0.075 & 0.078 \\
+ClsOnly & 0.520 & 0.008 & 0.469 & 0.092 & 0.066 & 0.098 \\
+NoTaxonomy & 0.517 & 0.009 & 0.407 & 0.092 & 0.056 & 0.085 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

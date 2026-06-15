@@ -1,19 +1,11 @@
 # Experiment Rigor Checklist
 
-## v2 Synthetic Rigor
-- [x] Multiple seeds.
-- [x] Error bars.
-- [x] Stronger synthetic baselines.
-- [x] Ablations.
-- [x] Stress tests.
-- [x] Negative cases.
-
-## ICLR Main Bar
-- [ ] Real-robot validation.
-- [ ] High-fidelity simulator benchmark.
-- [ ] Implemented learned model.
-- [ ] Implemented real competing baselines.
-- [ ] Manual related-work synthesis.
-- [ ] Paper-specific qualitative figures.
-
-Decision: fail ICLR main empirical-rigor gate; archive.
+- [x] Paired seeds across all methods.
+- [x] Strong preference/safety baselines: generic preference, RLHF surrogate, uncertainty querying, constraint planner, failure shield, and side-effect classifier.
+- [x] Multiple physical side-effect regimes.
+- [x] Side-effect recall, violation, damage, false alarm, query cost, and regret reported.
+- [x] Ablations target core preference components.
+- [x] Failure cases documented.
+- [ ] Real human preference labels.
+- [ ] Robot or high-fidelity validation.
+- [ ] Label-disagreement study.

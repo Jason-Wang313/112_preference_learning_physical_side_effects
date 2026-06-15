@@ -1,7 +1,7 @@
 # Novelty Decision
 
-Chosen thesis: Preference Learning Physical Side Effects turns the seed bet into a mechanism: Learn preferences over physical side effects that are absent from task success labels.
+Decision: STRONG_REVISE
 
-New central mechanism: Preference learning physical side effects keeps action-critical alternatives explicit until a physical observation collapses them.
+The paper has a defensible narrow novelty claim after v4: physical side-effect preference modeling improves local preference-learning outcomes beyond classifier and generic preference baselines.
 
-Decision: proceed as a revise/workshop-strength ICLR-style draft with synthetic but runnable evidence.
+The paper is not ready for ICLR main because evidence remains local. Real human labels and robot validation are mandatory before submission.

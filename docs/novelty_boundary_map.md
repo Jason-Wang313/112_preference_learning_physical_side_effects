@@ -1,13 +1,12 @@
 # Novelty Boundary Map
 
-## Crowded Territory
-- Bigger data/model scaling.
-- New benchmark only.
-- Generic active learning or uncertainty.
-- Combining a planner with a learned policy without a new state/action object.
+Novel:
+- Physical side-effect preference taxonomy for robot outcomes.
+- Joint gate over success, side-effect recall, violation, damage, false alarm, query cost, paired seeds, and ablations.
+- Local evidence that the proposed model beats side-effect classifiers and generic preference models.
 
-## Claimed Boundary
-Preference learning physical side effects keeps action-critical alternatives explicit until a physical observation collapses them.
-
-## What Would Falsify The Claim
-If observed-only baselines match the adverse-mode coverage and closed-loop success of the proposed branch-aware mechanism, the paper should be revised or killed.
+Not novel:
+- Preference learning.
+- RLHF.
+- Constraint-aware planning.
+- Side-effect detection in general.

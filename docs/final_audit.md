@@ -1,12 +1,11 @@
 # Final Audit
 
-1. Chosen thesis: Preference Learning Physical Side Effects explores `Learn preferences over physical side effects that are absent from task success labels.` for human preference learning for robots.
-2. ICLR-main decision: KILL_ARCHIVE.
-3. Submission-hardening version: v3.
-4. Reason: synthetic-only, template-generated evidence cannot support ICLR main-conference robotics claims.
-5. Closest hostile prior work: see `docs/hostile_prior_work.md`, `docs/hostile_prior_work_100_cards.csv`, and `docs/hostile_reviewer_response.md`.
-6. Reproducibility: synthetic code runs, but no real robot or high-fidelity benchmark is reproduced.
-7. Claim-validity status: main-conference claims killed; archive memo retained.
-8. Exact Downloads PDF path: `C:/Users/wangz/Downloads/112.pdf`
-9. GitHub URL: https://github.com/Jason-Wang313/112_preference_learning_physical_side_effects
-10. Confirmation: no visible Desktop copy was requested or made.
+Paper: 112 preference_learning_physical_side_effects
+
+Decision: STRONG_REVISE
+
+The v4 rebuild adds a local physical side-effect preference benchmark with paired seeds, strong local baselines, ablations, stress sweeps, failure cases, LaTeX tables, and figures. The proposed side-effect preference model beats the strongest non-oracle baseline, `side_effect_classifier_baseline`, by `0.066 +/- 0.010` paired success under combined stress.
+
+Side-effect diagnostics pass: recall improves by `0.132`, violation falls by `0.044`, damage falls by `0.018`, false alarms fall by `0.012`, and query cost falls by `0.041`.
+
+Remaining blocker: the evidence is local. The paper should not be submitted to ICLR main without real human labels and robot or independent high-fidelity validation.

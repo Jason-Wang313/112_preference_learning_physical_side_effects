@@ -1,19 +1,15 @@
 # Reproducibility Checklist
 
-## What Reproduces
-- [x] `python src/run_experiment.py`
-- [x] `results/metrics.csv`
-- [x] `results/raw_seed_metrics.csv`
-- [x] `results/ablation_metrics.csv`
-- [x] `results/stress_sweep.csv`
-- [x] `results/negative_cases.csv`
-- [x] `paper/main.tex`
-- [x] Canonical PDF: `C:/Users/wangz/Downloads/112.pdf`
-
-## What Does Not Reproduce
-- [ ] Real robot results.
-- [ ] High-fidelity benchmark runs.
-- [ ] Trained WAM checkpoints.
-- [ ] Competing learned baselines.
-
-This is reproducible as an archive memo and synthetic stress test, not as an ICLR-main robotics system paper.
+- [x] Single-command experiment: `python src\run_experiment.py`.
+- [x] Deterministic seed base documented in code.
+- [x] Raw seed/task/regime metrics emitted.
+- [x] Aggregated metrics emitted.
+- [x] Pairwise seed statistics emitted.
+- [x] Ablation metrics emitted.
+- [x] Stress sweep emitted.
+- [x] Failure cases emitted.
+- [x] LaTeX tables generated from results.
+- [x] Figures generated from results.
+- [ ] Real human-label data.
+- [ ] Hardware/high-fidelity robot validation.
+- [ ] Label-disagreement analysis.
