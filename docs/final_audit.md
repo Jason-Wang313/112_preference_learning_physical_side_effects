@@ -1,15 +1,32 @@
 # Final Audit
 
-Paper: 112 preference_learning_physical_side_effects
+Date: 2026-06-23
 
-Decision: STRONG_REVISE
+Version: v5_expanded
 
-The v4.1 rebuild adds a local physical side-effect preference benchmark with paired seeds, strong local baselines, ablations, expanded stress sweeps, failure cases, LaTeX tables, and figures. The proposed side-effect preference model beats the strongest non-oracle baseline, `side_effect_classifier_baseline`, by `0.066 +/- 0.010` paired success under combined stress.
+Terminal decision: STRONG_REVISE
 
-Side-effect diagnostics pass: recall improves by `0.132`, violation falls by `0.044`, damage falls by `0.018`, false alarms fall by `0.012`, and query cost falls by `0.041`.
+ICLR main ready: no
 
-Coverage audit passes: `metrics.csv` has 45 rows; `seed_task_regime_metrics.csv` has 11,025 rows; `ablation_task_regime_seed_metrics.csv` has 1,715 rows; `stress_sweep_seed_metrics.csv` has 7,350 task/regime/seed rows; `failure_cases.csv` has 8 rows; numeric checks found no NaN or infinite values.
+## Validated Artifacts
 
-Artifact audit passes: `C:/Users/wangz/Downloads/112.pdf` exists, is 404,159 bytes, has SHA256 `52B2E473119F55397476C7446E1CB3FFFEEE9F96B84F4941E597DBF1F43E8112`, and `C:/Users/wangz/Desktop/112.pdf` is absent.
+- PDF: `C:/Users/wangz/Downloads/112.pdf`
+- SHA256: `43EB404BF1B1B34E7642EB0D3D6BC2561E2962103A69054AB991DA226D199C10`
+- Pages: 25
+- Validator: `python scripts\validate_submission_artifacts.py` passed.
+- Visual QA: sampled title/citation page, gate table page, mid-paper figure page, appendix page, and bibliography page rendered without clipping or unreadable content.
+- Artifact placement: no `112.pdf` exists on Desktop, factory root, or child repo root.
 
-Remaining blocker: the evidence is local. The paper should not be submitted to ICLR main without real human labels and robot or independent high-fidelity validation.
+## Frozen Local Result
+
+- Proposed: `side_effect_causal_preference_model_v5`.
+- Strongest non-oracle: `proposed_side_effect_preference_model_v4`.
+- Hard success: `0.63901` vs `0.60294`.
+- Hard utility: `0.69629` vs `0.62443`.
+- Paired hard utility wins: `10/10`.
+- Local gates: all pass.
+- Scope gate: fails honestly.
+
+## Scope Failures
+
+The paper still needs real human labels, real label-disagreement analysis, robot or accepted high-fidelity downstream evaluation, calibrated deployment logs, trained checkpoints, and rollout evidence before it can be treated as ICLR-main ready.

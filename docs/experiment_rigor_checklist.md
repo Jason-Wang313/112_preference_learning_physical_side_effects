@@ -1,12 +1,14 @@
 # Experiment Rigor Checklist
 
-- [x] Paired seeds across all methods.
-- [x] Strong preference/safety baselines: generic preference, RLHF surrogate, uncertainty querying, constraint planner, failure shield, and side-effect classifier.
-- [x] Multiple physical side-effect regimes.
-- [x] Side-effect recall, violation, damage, false alarm, query cost, and regret reported.
-- [x] Ablations target core preference components.
-- [x] Stress sweep includes task/regime/seed detail.
-- [x] Eight failure cases documented.
-- [ ] Real human preference labels.
-- [ ] Robot or high-fidelity validation.
-- [ ] Label-disagreement study.
+- [x] Plan frozen before v5 execution.
+- [x] CPU-only/RAM-light deterministic experiment.
+- [x] Strongest non-oracle baseline identified after hard aggregate.
+- [x] Old v4.1 proposed method retained as a strong baseline.
+- [x] Paired seed tests reported.
+- [x] Removed-component ablations reported.
+- [x] Stress endpoint reported.
+- [x] Fixed-risk coverage and deployment utility reported together.
+- [x] Failure cases documented.
+- [x] Scope gate separated from local empirical gates.
+- [ ] Real human labels collected.
+- [ ] Real robot or accepted high-fidelity downstream evaluation completed.

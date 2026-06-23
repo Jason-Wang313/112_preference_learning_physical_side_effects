@@ -1,0 +1,25 @@
+\begin{table}[t]
+\centering
+\caption{Representative failure boundaries from the 24-case audit.}
+\label{tab:failure-cases}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrl}
+\toprule
+Case & Context & Severity & Required evidence \\
+\midrule
+hidden\_material\_damage & latent\_damage\_shift & 0.55 & requires tactile or material-state validation \\
+delayed\_workspace\_disruption & delayed\_effects & 0.56 & requires longer-horizon rollouts \\
+labeler\_tolerance\_shift & human\_preference\_shift & 0.58 & requires real label-disagreement modeling \\
+benign\_physical\_change & unseen\_object & 0.59 & requires calibrated benign-change exceptions \\
+overcautious\_rejection & combined\_stress & 0.61 & requires abstention-cost calibration \\
+tactile\_only\_damage & latent\_damage\_shift & 0.62 & requires tactile/material sensing \\
+human\_workspace\_norm\_shift & human\_preference\_shift & 0.64 & requires personalized side-effect priors \\
+irreversible\_small\_change & irreversible\_change & 0.66 & requires irreversibility-specific labels \\
+clutter\_with\_high\_task\_success & clutter\_accumulation & 0.55 & requires separate clutter utilities \\
+unstable\_but\_accepted\_stack & unstable\_placement & 0.56 & requires stability probes \\
+constraint\_reward\_conflict & combined\_stress & 0.58 & requires explicit aggregation tests \\
+risk\_budget\_blind\_spot & combined\_stress & 0.59 & requires coverage reporting \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

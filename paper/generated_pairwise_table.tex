@@ -1,0 +1,28 @@
+\begin{table}[t]
+\centering
+\caption{Paired hard-seed differences for v5 against every non-v5 comparator.}
+\label{tab:paired}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrr}
+\toprule
+Baseline & Util. diff & CI & Succ. diff & Wins \\
+\midrule
+SuccessOnly & 0.425 & 0.001 & 0.231 & 10/10 \\
+GenericPref & 0.327 & 0.001 & 0.170 & 10/10 \\
+RLHF & 0.296 & 0.002 & 0.148 & 10/10 \\
+UncQuery & 0.257 & 0.002 & 0.135 & 10/10 \\
+FailureShield & 0.243 & 0.002 & 0.127 & 10/10 \\
+Constraint & 0.232 & 0.003 & 0.125 & 10/10 \\
+PrefTransformer & 0.212 & 0.003 & 0.109 & 10/10 \\
+InvRewardDesign & 0.204 & 0.002 & 0.109 & 10/10 \\
+ConservativeFilter & 0.197 & 0.001 & 0.112 & 10/10 \\
+SideEffectCls & 0.189 & 0.002 & 0.099 & 10/10 \\
+MaxUncQuery & 0.187 & 0.002 & 0.103 & 10/10 \\
+AffordPenalty & 0.169 & 0.002 & 0.088 & 10/10 \\
+RiskCalReward & 0.126 & 0.001 & 0.070 & 10/10 \\
+OldV4Proposed & 0.072 & 0.002 & 0.036 & 10/10 \\
+OracleHumanJudge & -0.095 & 0.002 & -0.077 & 0/10 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

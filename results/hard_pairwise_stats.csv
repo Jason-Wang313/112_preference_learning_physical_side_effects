@@ -1,0 +1,16 @@
+baseline,mean_utility_diff,ci95_utility_diff,mean_success_diff,ci95_success_diff,wins,total,decision
+conservative_safety_filter,0.196781,0.001431,0.111786,0.001709,10,10,win
+constraint_aware_planner,0.232491,0.002514,0.125193,0.003287,10,10,win
+failure_prediction_shield,0.242811,0.002367,0.127234,0.002871,10,10,win
+generic_pairwise_preference_model,0.326739,0.001288,0.169682,0.001668,10,10,win
+human_query_max_uncertainty,0.187284,0.001777,0.102568,0.002136,10,10,win
+inverse_reward_design_baseline,0.203781,0.001547,0.108964,0.002012,10,10,win
+oracle_human_side_effect_judge,-0.094953,0.00206,-0.077276,0.002421,0,10,not_clear
+physical_affordance_penalty,0.168766,0.001879,0.087807,0.002418,10,10,win
+preference_transformer_no_side_effects,0.212411,0.002634,0.108677,0.003305,10,10,win
+proposed_side_effect_preference_model_v4,0.071865,0.001869,0.036073,0.002369,10,10,win
+reward_model_rlhf_surrogate,0.295568,0.002154,0.147812,0.002815,10,10,win
+risk_calibrated_reward_model,0.126145,0.001455,0.069729,0.001872,10,10,win
+side_effect_classifier_baseline,0.188912,0.001889,0.099083,0.002456,10,10,win
+success_only_policy,0.425182,0.001337,0.230687,0.001608,10,10,win
+uncertainty_query_preference_learner,0.257183,0.001787,0.135396,0.00216,10,10,win

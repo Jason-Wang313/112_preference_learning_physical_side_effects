@@ -1,9 +1,0 @@
-baseline,mean_success_diff,ci95_success_diff,wins,total,decision,strongest_non_oracle
-constraint_aware_planner,0.0869,0.0117,7,7,proposed_better,False
-failure_prediction_shield,0.0942,0.011,7,7,proposed_better,False
-generic_pairwise_preference_model,0.125,0.0113,7,7,proposed_better,False
-oracle_side_effect_preference_judge,-0.091,0.0117,0,7,not_decisive,False
-reward_model_rlhf_surrogate,0.1053,0.0117,7,7,proposed_better,False
-side_effect_classifier_baseline,0.0658,0.0095,7,7,proposed_better,True
-success_only_policy,0.1827,0.0053,7,7,proposed_better,False
-uncertainty_query_preference_learner,0.0958,0.0121,7,7,proposed_better,False

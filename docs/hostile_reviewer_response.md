@@ -1,18 +1,21 @@
 # Hostile Reviewer Response
 
-Paper: 112 Preference Learning Physical Side Effects
+## Reviewer attack: the benchmark is synthetic.
 
-## Strongest Technical Threats
+Agreed. The scope gate fails. The paper is `STRONG_REVISE`, not ICLR-main ready.
 
-- This may be just side-effect classification.
-- Constraint-aware planners may already reduce damage.
-- Query cost may become impractical.
-- No real human labels are used.
+## Reviewer attack: the old proposed method should be the baseline.
 
-## Response
+It is. `proposed_side_effect_preference_model_v4` is the strongest non-oracle baseline in the v5 hard aggregate.
 
-The v4.1 rebuild includes side-effect classification as the strongest non-oracle baseline. The proposed model improves combined-stress success by `0.066 +/- 0.010`, improves recall by `0.132`, and lowers violations, damage, false alarms, and query cost. The stress sweep now contains `7,350` task/regime/seed rows and `8` failure cases, but this is still local evidence rather than real human-label or robot evidence.
+## Reviewer attack: safety can be faked by refusing actions.
 
-## Honest Action
+The fixed-risk audit reports coverage, breach rate, and deployment utility together. Strict fixed-risk coverage is `0.84000`, not zero.
 
-Mark as `STRONG_REVISE`, not ready acceptance. Submission requires real human-label and robot/high-fidelity validation.
+## Reviewer attack: citation boxes and page count do not prove rigor.
+
+Correct. The evidence is the frozen CSV/gate protocol. The boxed citations and 25 pages are artifact-quality requirements, not scientific proof.
+
+## Reviewer attack: real human preferences may disagree with the generator.
+
+Correct. A real label-disagreement audit is mandatory before submission.

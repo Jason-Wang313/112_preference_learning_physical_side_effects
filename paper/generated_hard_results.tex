@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{Hard-split results over delayed, latent, human-shifted, and combined side-effect cases.}
+\label{tab:hard-results}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+Method & Succ. & Util. & Recall & Viol. & Damage & False & Query \\
+\midrule
+OracleHumanJudge & 0.716 & 0.791 & 0.635 & 0.018 & 0.031 & 0.056 & 0.191 \\
+CausalSideEffectV5 & 0.639 & 0.696 & 0.596 & 0.036 & 0.045 & 0.073 & 0.205 \\
+OldV4Proposed & 0.603 & 0.624 & 0.529 & 0.054 & 0.058 & 0.093 & 0.220 \\
+RiskCalReward & 0.569 & 0.570 & 0.460 & 0.075 & 0.068 & 0.092 & 0.237 \\
+AffordPenalty & 0.551 & 0.528 & 0.418 & 0.087 & 0.070 & 0.114 & 0.239 \\
+MaxUncQuery & 0.536 & 0.509 & 0.448 & 0.095 & 0.086 & 0.093 & 0.434 \\
+SideEffectCls & 0.540 & 0.507 & 0.411 & 0.095 & 0.083 & 0.107 & 0.260 \\
+ConservativeFilter & 0.527 & 0.500 & 0.409 & 0.086 & 0.061 & 0.133 & 0.264 \\
+InvRewardDesign & 0.530 & 0.493 & 0.382 & 0.105 & 0.089 & 0.105 & 0.237 \\
+PrefTransformer & 0.530 & 0.484 & 0.356 & 0.112 & 0.098 & 0.093 & 0.250 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

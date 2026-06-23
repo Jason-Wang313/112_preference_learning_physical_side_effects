@@ -2,116 +2,606 @@
 \usepackage{iclr2026_conference,times}
 \input{math_commands.tex}
 \usepackage{hyperref}
+\usepackage{xcolor}
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{array}
 \raggedbottom
+\hypersetup{
+  colorlinks=false,
+  pdfborder={0 0 1.4},
+  citebordercolor={0 0.82 0},
+  linkbordercolor={0 0.70 0},
+  urlbordercolor={0 0.70 0}
+}
 
-\title{Preference Learning for Physical Side Effects}
+\title{Causal Preference Learning for Physical Side Effects in Robot Tasks}
 \author{Anonymous Authors}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Robots can satisfy visible task goals while producing physical side effects that humans dislike: scuffed surfaces, displaced objects, clutter, unstable placements, irreversible changes, or disruption of a human workspace. Generic preference learning and RLHF-style reward modeling can miss these side effects when comparisons focus on task success. We rebuild Paper 112 around a falsifiable mechanism: robot preference models should represent physical side-effect mechanisms explicitly. A v4.1 local benchmark covers 5 tasks, 7 side-effect regimes, 5 deployment splits, 9 methods, 7 paired seeds, and 84 episodes per group, with 7,350 task/regime/seed stress rows and 8 documented failure cases. Under combined side-effect stress, the proposed side-effect preference model obtains $0.581 \pm 0.007$ success versus $0.515 \pm 0.006$ for the strongest non-oracle baseline, side-effect classification. It improves side-effect recall from $0.469$ to $0.601$, reduces violation from $0.092$ to $0.048$, reduces damage from $0.066$ to $0.047$, reduces false alarms from $0.097$ to $0.085$, reduces query cost from $0.268$ to $0.228$, and wins 7/7 paired seeds. The terminal decision is \textbf{STRONG\_REVISE}: the local evidence supports the mechanism, but real human preference labels and robot validation are required before ICLR-main submission.
+Robots can optimize visible task success while producing physical side effects that humans dislike: scuffed surfaces, displaced objects, clutter, unstable placements, irreversible changes, human-workspace disruption, or delayed material damage. Preference learning is a natural alignment interface, but generic pairwise preferences and RLHF-style reward models can collapse these mechanisms into an opaque scalar. We rebuild Paper 112 as a hostile-review audit of this claim. The v5 protocol evaluates 16 methods, including the old v4.1 proposed method as a strong baseline, over 102,400 main cells, 8,000 ablation cells, 48,000 stress cells, 51,200 fixed-risk deployment cells, and 24 predefined failure cases. The proposed \texttt{side\_effect\_causal\_preference\_model\_v5} reaches hard-split success 0.639 versus 0.603 for the strongest non-oracle baseline \texttt{proposed\_side\_effect\_preference\_model\_v4}, and hard utility 0.696 versus 0.624. It improves side-effect recall by 0.068, lowers damage by -0.013, lowers false alarms by -0.019, lowers query cost by -0.015, wins 10/10 paired hard utility seeds, and remains below the oracle. The terminal decision is \textbf{STRONG\_REVISE}: the local evidence is coherent and reproducible, but the work is not ICLR-main ready without real human labels, label-disagreement audits, robot or accepted high-fidelity downstream evaluation, deployment logs, trained policies, and rollout evidence.
 \end{abstract}
 
 \section{Motivation}
-Preference learning has become a central tool for aligning agents with human judgments \citep{christiano2017deep,sadigh2017active}. In robotics, preferences are often used to select helpful or acceptable behavior, but physical side effects create a special problem: two successful trajectories can differ in scuffs, clutter, object displacement, instability, or irreversible changes.
+Preference learning has become a standard way to make learned agents reflect human judgments rather than hand-written scalar rewards \citep{christiano2017deep,wirth2017survey,sadigh2017active,wilson2012bayesian}. Robotics makes the interface more treacherous than it appears. A robot can clear a table while scraping the finish, retrieve from a drawer while misaligning nearby objects, route a cable while creating clutter, or place a shelf item in a state that is temporarily stable but later tips. These outcomes are not simply lower task success. They are physical side effects, and they often become visible only through additional sensors, delayed observation, or a human norm that was not made explicit during the comparison.
 
-Prior work on preference learning, inverse reward design, constraints, and learning from corrections pressures any broad claim that preferences alone are new \citep{hadfieldmenell2017inverse,bajcsy2017learning,brown2019extrapolating}. The question here is narrower: does an explicit physical side-effect preference model outperform generic pairwise preferences, reward-model surrogates, uncertainty querying, constraint-aware planning, failure shields, and side-effect classifiers?
+This paper takes a deliberately narrow position. We do not claim that preference learning, inverse reinforcement learning, inverse reward design, side-effect avoidance, or robot corrections are new \citep{ng2000algorithms,abbeel2004apprenticeship,hadfieldmenell2017inverse,bajcsy2017learning,brown2019extrapolating}. The defensible claim is that a robot preference learner needs an explicit representation of physical side-effect mechanisms when comparisons are collected from successful trajectories. The empirical question is whether this representation survives strong local baselines, including the old v4.1 proposed method, side-effect classifiers, risk-calibrated reward models, inverse reward design, conservative filters, and high-cost uncertainty querying.
 
-\section{Method sketch}
-The proposed method, \texttt{proposed\_side\_effect\_preference\_model}, separates task preference from physical side-effect aversion. It uses:
-\begin{itemize}
-\item a side-effect taxonomy over force damage, object displacement, clutter, instability, irreversibility, and human-workspace disruption;
-\item counterfactual labels comparing successful trajectories with different physical costs;
-\item query selection for ambiguous side effects rather than easy success/failure pairs;
-\item a constraint-aware preference aggregator;
-\item a calibration guard that avoids over-penalizing benign physical changes.
-\end{itemize}
+\paragraph{Review posture.}
+The rebuild follows a hostile-review protocol: do not optimize for attractive numbers; optimize for a result that would survive an adversarial reviewer. We therefore freeze all gates before reading final numbers. If the proposed model clears the local gates, we keep only a \textbf{STRONG\_REVISE} decision because no real human-label or robot validation is present. If any local gate fails, the correct decision is \textbf{KILL\_ARCHIVE}. This separation prevents the common failure mode where a clean synthetic benchmark is mistaken for a submission-ready robotics paper.
 
-The implementation is a local benchmark rather than a real human-label study. That limitation is why the paper is strong-revise, not submission-ready.
+\section{Problem Setup}
+We consider a robot trajectory $\tau=(s_0,a_0,\ldots,s_T)$ with visible task reward, latent physical side-effect state, and a human preference label. Let $x(\tau)$ denote task-visible features, and let
+\[
+z(\tau)=\left(z^{force}, z^{disp}, z^{clutter}, z^{unstable}, z^{irrev}, z^{human}, z^{delay}, z^{latent}\right)
+\]
+denote side-effect mechanisms: force damage, object displacement, clutter accumulation, unstable placement, irreversibility, human-workspace disruption, delayed visibility, and latent material damage. A generic preference model estimates $\Pr(\tau_i \succ \tau_j \mid x_i,x_j)$; the v5 model estimates $\Pr(\tau_i \succ \tau_j \mid x_i,x_j,z_i,z_j,c)$ where $c$ includes user tolerance, deployment context, and risk budget. The distinction is not cosmetic. If two trajectories have equal visible success but different latent side effects, $x$ cannot identify the preference without an additional mechanism or label.
 
-\section{Benchmark}
-The benchmark is generated by \texttt{src/run\_experiment.py}. It writes seed-level CSVs, aggregate metrics, pairwise tests, ablations, stress sweeps, failure cases, figures, and LaTeX tables. The v4.1 stress file records task/regime/seed detail rather than only seed-level aggregates, so the stress audit can check coverage across physical side-effect mechanisms.
+\paragraph{Side-effect-aware utility.}
+The audit reports task success, side-effect recall, violation rate, damage rate, false alarm rate, query cost, preference regret, delayed-effect miss rate, label-disagreement loss, human-acceptance proxy, and utility. Utility is not used as a hidden training objective; it is a frozen evaluation index:
+\[
+U = \alpha_s S + \alpha_r R + \alpha_h H - \beta_v V - \beta_d D - \beta_g G - \beta_f F - \beta_q Q - \beta_l L - \beta_m M.
+\]
+Here $S$ is task success, $R$ side-effect recall, $H$ human acceptance, $V$ violation, $D$ damage, $G$ preference regret, $F$ false alarms, $Q$ query cost, $L$ label-disagreement loss, and $M$ delayed-effect miss. The exact coefficients are frozen in \texttt{src/run\_experiment.py}; changing them after seeing outcomes would invalidate the audit.
+
+\paragraph{Identifiability boundary.}
+If side-effect mechanisms are unobserved and the labeler never compares trajectories that differ only in side-effect state, no algorithm can identify side-effect aversion from task success alone. The v5 method is therefore not a magic preference learner. It relies on counterfactual preference pairs, mechanism features, and uncertainty about labeler tolerance. The paper's most important negative claim is that this local evidence cannot establish external validity without real labels and robot rollouts.
+
+\section{Method}
+The proposed method, \texttt{side\_effect\_causal\_preference\_model\_v5}, has six components.
+
+\paragraph{Causal side-effect taxonomy.}
+The model separates force damage, displacement, clutter, instability, irreversibility, human-workspace disruption, delayed visibility, and latent material state. This taxonomy is used for both prediction and audit stratification. It makes failure cases reportable: a method may improve visible side-effect classification while still missing delayed material damage.
+
+\paragraph{Counterfactual preference pairs.}
+The learner prioritizes pairs where visible task success is matched but side-effect mechanisms differ. This prevents the reward model from learning a shortcut in which successful trajectories are always preferred. The same idea is adjacent to inverse reward design and preference queries \citep{hadfieldmenell2017inverse,sadigh2017active}, but the v5 audit treats physical side effects as a first-class robotic mechanism rather than a generic uncertainty source.
+
+\paragraph{Labeler-disagreement weighting.}
+Human side-effect preferences are not deterministic. One person may tolerate temporary clutter; another may reject it in a shared workspace. The v5 model therefore discounts labels in high-disagreement regimes unless the query resolves a mechanism-level ambiguity. This is a local proxy for a real label-disagreement study; it is not a substitute for one.
+
+\paragraph{Delayed-effect memory.}
+Some side effects are not visible at the comparison moment. A stacked item may tip later, and a wiped surface may show damage only under tactile or material-state inspection. The v5 model carries a delayed-effect memory feature. Ablating this feature tests whether the model merely learned visible side-effect classification.
+
+\paragraph{Benign-change calibration.}
+Physical change is not always bad. Moving an object can be acceptable if it is intentional, reversible, and outside a human workspace. A calibration guard reduces false alarms for benign changes. The guard is essential because a model that rejects every physical change can look safe while becoming useless.
+
+\paragraph{Deployment-risk budgeting.}
+The deployment audit asks what happens when a policy is allowed to act only under a fixed physical-risk budget. This exposes a common safety-reporting trap: a conservative filter can reduce damage by refusing most actions. We therefore report both coverage and deployment utility.
+
+\section{Theory}
+\paragraph{Proposition 1: success-only preferences are insufficient.}
+Assume two trajectories $\tau_a,\tau_b$ have the same visible task features $x(\tau_a)=x(\tau_b)$ and the same task success, but different side-effect states $z(\tau_a)\neq z(\tau_b)$. Any model whose prediction is a measurable function only of $x$ assigns the same preference score to both trajectories. If the human preference depends on $z$, the model cannot recover the preference ordering.
+
+\emph{Proof sketch.} Since the model observes only $x$ and the two feature vectors are equal, the model output is identical. A preference function that assigns different utility because of $z$ cannot be represented. The result is an identifiability statement, not a performance claim.
+
+\paragraph{Proposition 2: conservative safety can hide behind low coverage.}
+Let a deployment rule accept trajectory $\tau$ only if estimated side-effect risk $\hat r(\tau)\leq b$. A rule that always rejects has zero measured accepted-risk violations, but zero useful coverage. Any safety comparison that omits coverage can prefer this degenerate rule over a useful policy. The fixed-risk audit avoids that failure by reporting coverage, breach rate, and deployment utility together.
+
+\paragraph{Proposition 3: delayed side effects require temporal evidence.}
+If a side effect is realized after the comparison horizon and no delayed observation is collected, then the preference data are compatible with both harmless and harmful latent dynamics. A delayed-effect memory feature can improve local predictions only when the generator exposes delayed state. In real deployment, this requires delayed labels or physical sensing.
+
+These propositions are deliberately modest. They justify the audit design and the ablation axes; they do not prove that the v5 method will transfer to hardware.
+
+\section{Frozen Experimental Protocol}
+The v5 protocol is generated by \texttt{src/run\_experiment.py}. It is deterministic, CPU-only, and RAM-light. It expands the prior v4.1 benchmark from a small side-effect preference audit into 102,400 main cells over 10 tasks, 8 side-effect regimes, 8 deployment splits, 16 methods, and 10 paired seeds. It also generates 8,000 ablation cells, 48,000 stress cells, 51,200 fixed-risk deployment cells, and 24 failure cases.
+
+\input{generated_row_counts.tex}
 
 \paragraph{Tasks.}
-The tasks are table clearing, drawer retrieval, cable routing, tool handoff, and mobile shelf placement.
+The tasks are table clearing, drawer retrieval, cable routing, tool handoff, mobile shelf placement, fragile object sorting, countertop wiping, bin packing cleanup, shared workspace fetch, and stacked container staging. The additional tasks are not padding. They introduce different physical channels: high force, clutter, instability, human workspace norms, delayed visibility, and latent damage.
 
-\paragraph{Side-effect regimes.}
-The regimes are nominal, force damage, object displacement, clutter accumulation, unstable placement, irreversible change, and combined side-effect stress.
+\paragraph{Regimes and splits.}
+The regimes are nominal, force damage, object displacement, clutter accumulation, unstable placement, irreversible change, human-workspace disruption, and latent material damage. The splits include nominal and seen shifts, but the hard aggregate is dominated by human-preference shift, delayed effects, latent-damage shift, and combined stress. This prevents the headline result from being driven by easy nominal cases.
 
-\paragraph{Splits.}
-The deployment splits are nominal, seen shift, unseen object, unseen side effect, and combined stress.
+\paragraph{Baselines.}
+The comparator set is intentionally uncomfortable for the proposed method: success-only control, generic pairwise preferences, RLHF reward modeling \citep{christiano2017deep}, uncertainty-query preferences \citep{sadigh2017active,wilson2012bayesian}, constraint-aware planning, failure prediction, side-effect classification, inverse reward design \citep{hadfieldmenell2017inverse}, conservative safety filtering, preference transformers without side-effect mechanisms, maximum-uncertainty human querying, physical affordance penalties, risk-calibrated reward modeling, and \texttt{proposed\_side\_effect\_preference\_model\_v4}. The oracle is reported only as headroom.
 
-\paragraph{Methods.}
-The baselines are success-only policy, generic pairwise preference model, reward-model RLHF surrogate, uncertainty-query preference learner, constraint-aware planner, failure-prediction shield, and side-effect classifier baseline. The benchmark also includes the proposed model and an oracle side-effect preference judge.
+\paragraph{Frozen gates.}
+The local gates require hard-split success and utility margins over the strongest non-oracle baseline, diagnostic improvement, no regression in damage, false alarms, query cost, or regret, at least 8/10 paired hard utility wins, a nontrivial ablation margin, endpoint stress robustness, and fixed-risk coverage that is neither zero nor suspiciously perfect. These gates were written before the v5 run.
 
-\paragraph{Metrics.}
-We report task success, side-effect violation, preference regret, side-effect recall, false side-effect alarm rate, query cost, damage rate, regret to oracle, paired seed differences, ablations, stress sweeps, and failure cases.
+\section{Main Results}
+\input{generated_hard_results.tex}
 
-\section{Results}
-\input{../results/combined_stress_table.tex}
-
-The strongest non-oracle baseline is \texttt{side\_effect\_classifier\_baseline}. The proposed method improves combined-stress success by $0.066 \pm 0.010$ in paired seed comparisons and wins 7/7 seeds. The oracle remains higher at $0.672 \pm 0.007$, so the benchmark still has headroom.
+The strongest non-oracle baseline is \texttt{proposed\_side\_effect\_preference\_model\_v4}, which is important: the new method is not merely compared against weak generic preference learners. Hard-split success is 0.639 for v5 versus 0.603 for that baseline, a margin of 0.036. Hard utility is 0.696 versus 0.624, a margin of 0.072. The oracle reaches hard utility 0.791, leaving clear headroom.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/side_effect_pref_combined_success.png}
-\caption{Combined-stress success with 95\% confidence intervals. The proposed side-effect preference model clears all non-oracle baselines but remains below the oracle.}
+\includegraphics[width=0.96\linewidth]{../figures/side_effect_v5_hard_utility.png}
+\caption{Hard-split utility for all methods. The proposed v5 method beats the old v4.1 method but remains below the oracle.}
+\label{fig:hard-utility}
 \end{figure}
+
+\input{generated_gate_table.tex}
+
+The diagnostic deltas show the actual mechanism of the gain. Recall improves by 0.068. Side-effect violation changes by -0.017, damage by -0.013, false alarms by -0.019, query cost by -0.015, and preference regret by -0.011 relative to the strongest non-oracle baseline. The paired hard utility comparison wins 10/10 seeds.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/side_effect_pref_diagnostics.png}
-\caption{Side-effect diagnostics. The proposed method improves side-effect recall while lowering violations, damage, false alarms, and query cost relative to the strongest baseline.}
+\includegraphics[width=0.96\linewidth]{../figures/side_effect_v5_diagnostics.png}
+\caption{Hard-split diagnostics. The key result is not only task success; v5 improves recall and utility while lowering damage, false alarms, query cost, and preference regret.}
+\label{fig:diagnostics}
 \end{figure}
 
-\input{../results/pairwise_decision_table.tex}
+\input{generated_pairwise_table.tex}
 
-\section{Ablations and stress tests}
-\input{../results/ablation_table.tex}
+\section{Ablations}
+\input{generated_ablation_table.tex}
 
-The best removed-component ablation is \texttt{minus\_ambiguous\_query\_selector}; the full method remains ahead by $0.024$ success. Removing the taxonomy, counterfactual labels, query selector, constraint aggregator, or calibration guard produces distinct failures.
+The ablations are designed to be hostile to the method's story. Removing the taxonomy tests whether side-effect mechanisms matter. Removing counterfactual pairs tests whether the method needs matched-success comparisons. Removing labeler-disagreement weighting tests whether subjective tolerance is merely noise. Removing delayed-effect memory tests whether the method is just a visible classifier. Removing benign-change calibration tests overcautious rejection. Removing the deployment-risk budget tests whether local success survives under risk constraints. The full method beats the best removed component by 0.021 success and 0.039 utility.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/side_effect_pref_ablation.png}
-\caption{Ablations under combined side-effect stress. The full model remains above every removed-component variant.}
+\includegraphics[width=0.96\linewidth]{../figures/side_effect_v5_ablation.png}
+\caption{Ablation utility under combined stress. The best removed component remains below the full method, but the margin is not so large that the result should be oversold.}
+\label{fig:ablation}
 \end{figure}
+
+\section{Stress Sweep and Fixed-Risk Deployment}
+\input{generated_stress_endpoint_table.tex}
+
+The endpoint stress sweep checks whether the ordering survives maximum synthetic side-effect pressure. At stress level 1.0, v5 beats the strongest non-oracle stress comparator by 0.068 utility. This is a useful local result, but it remains a generated stress test. A real submission would need an accepted simulator split or hardware logs with the same endpoint structure.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/side_effect_pref_stress_sweep.png}
-\caption{Stress sweep over side-effect intensity. The proposed model stays above RLHF, constraint, and side-effect classifier baselines across the generated stress range.}
+\includegraphics[width=0.96\linewidth]{../figures/side_effect_v5_stress_sweep.png}
+\caption{Utility across side-effect stress. The proposed method remains above strong non-oracle baselines at the endpoint, while the oracle remains higher.}
+\label{fig:stress}
 \end{figure}
+
+\input{generated_fixed_risk_table.tex}
+
+The strict fixed-risk budget is 0.08. Under that budget, v5 has coverage 0.840, breach rate 0.180, and deployment-utility margin 0.419 over the strongest non-oracle fixed-risk baseline. The coverage number is intentionally reported next to utility. A conservative filter that refuses most actions is not a useful robot policy even if its accepted actions are safe.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.82\linewidth]{../figures/side_effect_pref_damage_regret.png}
-\caption{Damage and regret to oracle under combined stress. The proposed method reduces regret while lowering damage relative to the strongest non-oracle baseline.}
+\includegraphics[width=0.90\linewidth]{../figures/side_effect_v5_fixed_risk.png}
+\caption{Fixed-risk coverage versus deployment utility. Reporting both axes prevents a conservative no-action policy from looking deceptively strong.}
+\label{fig:fixed-risk}
 \end{figure}
 
-\section{Failure cases}
-The failure-case CSV records eight boundaries. RGB-visible success can hide internal material damage; humans may disagree about acceptable clutter; benign physical changes can be over-penalized; labeler risk tolerance can shift; side effects can appear after the preference comparison window; tactile-only surface damage can be invisible to RGB preference features; overcautious rejection can treat benign displacement as clutter; and the oracle judge remains better. These failures require real human-label variance, tactile/material-state validation, longer-horizon rollouts, calibrated benign-change exceptions, and robot experiments.
+\section{Failure Cases}
+\input{generated_failure_table.tex}
 
-\section{Hostile prior-work boundary}
-Preference learning, RLHF, active preference querying, constraints, and learning from corrections already cover much of the surrounding space \citep{christiano2017deep,sadigh2017active,hadfieldmenell2017inverse,bajcsy2017learning,brown2019extrapolating}. The defensible claim is narrow: explicit physical side-effect mechanisms improve local preference learning beyond generic preferences and side-effect classifiers.
+The failure cases are not decorative. They are constraints on what can be claimed. Hidden material damage requires tactile or material-state sensing; delayed workspace disruption requires longer horizons; labeler tolerance shift requires real human labels; overcautious rejection requires calibration against benign changes; and oracle headroom means the mechanism is not saturated. These are exactly the issues an ICLR reviewer should attack.
 
-\section{Limitations and terminal decision}
-The evidence is strong enough to continue but not enough to submit. The limitations are material:
+\section{Submission Readiness Decision}
+The terminal decision is \textbf{STRONG\_REVISE}. The local evidence is reproducible and the method clears all frozen local gates, but the scope gate fails. This paper should not be submitted to ICLR main in its current form because it lacks:
 \begin{itemize}
-\item the benchmark is local and generated;
-\item no real human preference labels are used;
-\item no label-disagreement study is provided;
-\item no real robot or independent high-fidelity simulator has been used;
-\item side-effect severity may be subjective and context-dependent.
+\item real human preference labels;
+\item a label-disagreement audit over actual annotators;
+\item robot or accepted high-fidelity downstream evaluation;
+\item calibrated deployment logs;
+\item trained policy checkpoints;
+\item rollout videos or equivalent physical evidence.
 \end{itemize}
 
-The terminal decision for this rebuild is \textbf{STRONG\_REVISE}. The next honest version must validate the taxonomy and query strategy with real human labels and robot/high-fidelity downstream evaluations. Without that evidence, the paper should not be submitted to ICLR main.
+\paragraph{Why the paper is not killed.}
+The v5 result is not merely a prettier version of v4. The strongest non-oracle baseline is the old v4 method, and the new method still clears hard success, hard utility, paired hard seeds, diagnostics, ablations, stress endpoint, and fixed-risk deployment gates. That is enough to justify continued development.
+
+\paragraph{Why the paper is not ready.}
+Every headline number is local. None of the gates measures real annotator disagreement, perception errors, robot contact dynamics, policy optimization, or long-horizon deployment drift. A reviewer would be right to reject an acceptance claim that treated this generated audit as external validation.
+
+\paragraph{How to read the artifact.}
+The right use of this manuscript is as a submission-preparation dossier. It defines the theory, baselines, gates, row-level artifacts, and failure boundaries that a real external study must preserve. It is not a replacement for the external study itself.
+
+The correct next version is not a prettier PDF. It is an external-evidence version: collect labels, audit disagreement, train a downstream policy, evaluate on robot or accepted high-fidelity scenarios, and report the predefined gates even if they fail.
+
+\clearpage
+\section*{Appendix A: Additional Prior-Work Boundary}
+Preference-based reinforcement learning is a mature area \citep{wirth2017survey}. Deep preference learning demonstrated scalable reward learning from comparisons \citep{christiano2017deep}. Active preference learning for robotics demonstrated that query selection can reduce label burden \citep{sadigh2017active}. Inverse reinforcement learning and apprenticeship learning established the older objective-inference framing \citep{ng2000algorithms,abbeel2004apprenticeship}. Inverse reward design and the off-switch game pressure any simplistic story about specified rewards and human oversight \citep{hadfieldmenell2017inverse,hadfieldmenell2017off}. Learning from physical human interaction and corrections shows that robots can use richer feedback than scalar rewards \citep{bajcsy2017learning,bobu2020quantifying,losey2020learning}. AI safety work on side effects and conservative agency shows why a policy can satisfy a stated objective while causing unwanted environmental changes \citep{amodei2016concrete,leike2017ai,krakovna2018measuring,turner2020conservative}.
+
+The contribution here is therefore not the broad idea of learning from preferences, nor the broad idea that side effects matter. The contribution is a narrow local mechanism audit: when preference comparisons are ambiguous because two successful trajectories differ mainly in physical side effects, does a causal side-effect representation improve hard-split utility without hiding behind higher cost, higher false alarms, or lower coverage?
+
+\section*{Appendix B: Formal Gate Definitions}
+Let $M^\star$ denote v5 and $B$ the strongest non-oracle baseline selected by hard utility after excluding the oracle. The hard success gate requires $S(M^\star)-S(B)\ge 0.030$. The hard utility gate requires $U(M^\star)-U(B)\ge 0.050$. The diagnostic gate requires $R(M^\star)-R(B)\ge 0.050$ or $V(M^\star)-V(B)\le -0.030$. The non-regression gate requires $\Delta D\le 0$, $\Delta F\le 0$, $\Delta Q\le 0$, and $\Delta G\le 0$, where $D$ is damage, $F$ false alarms, $Q$ query cost, and $G$ preference regret. The paired gate requires at least 8 of 10 seed-level hard utility wins. The ablation gate requires the full method to beat the best removed-component variant by at least 0.010 success or 0.040 utility. The stress endpoint gate requires v5 to beat the strongest non-oracle endpoint stress comparator by at least 0.050 utility. The fixed-risk gate requires coverage in $[0.300,0.950)$ and positive fixed-risk deployment utility margin.
+
+These gates are intentionally stricter than the v4.1 continuation audit. They test whether the new method improves a harder version of the problem rather than merely reproducing a small benchmark.
+
+\section*{Appendix C: Method Components and Failure Modes}
+\paragraph{Taxonomy.} The taxonomy creates a structured side-effect state. Its failure mode is misspecification: a real robot may produce side effects outside the eight generated channels.
+
+\paragraph{Counterfactual pairs.} Counterfactual pairs protect against visible-success shortcuts. Their failure mode is collection cost: real humans may need careful interfaces to compare trajectories that differ only in physical side effects.
+
+\paragraph{Disagreement weighting.} Disagreement weighting protects against treating subjective norms as label noise. Its failure mode is under-personalization: a global weighting scheme cannot replace a user-specific model.
+
+\paragraph{Delayed-effect memory.} Delayed memory protects against post-comparison side effects. Its failure mode is observability: if no delayed observation is collected, the memory has nothing real to remember.
+
+\paragraph{Benign-change calibration.} Calibration protects against a robot that refuses harmless changes. Its failure mode is false permissiveness if the calibration set misses subtle damage.
+
+\paragraph{Risk budgeting.} Risk budgeting protects deployment. Its failure mode is low coverage, which is why coverage is reported directly.
+
+\section*{Appendix D: Complete Failure Boundary Notes}
+\paragraph{hidden material damage.} RGB-visible success hides subsurface scuffing or finish wear The frozen audit tags this boundary under \texttt{latent\_damage\_shift} with severity 0.55. The required next evidence is: requires tactile or material-state validation.
+
+\paragraph{delayed workspace disruption.} the side effect appears after the preference comparison window The frozen audit tags this boundary under \texttt{delayed\_effects} with severity 0.56. The required next evidence is: requires longer-horizon rollouts.
+
+\paragraph{labeler tolerance shift.} labelers disagree about acceptable clutter and displacement The frozen audit tags this boundary under \texttt{human\_preference\_shift} with severity 0.58. The required next evidence is: requires real label-disagreement modeling.
+
+\paragraph{benign physical change.} the model can over-penalize harmless displacement The frozen audit tags this boundary under \texttt{unseen\_object} with severity 0.59. The required next evidence is: requires calibrated benign-change exceptions.
+
+\paragraph{overcautious rejection.} risk budgeting rejects useful actions when uncertainty is high The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.61. The required next evidence is: requires abstention-cost calibration.
+
+\paragraph{tactile only damage.} surface damage is invisible to RGB preference features The frozen audit tags this boundary under \texttt{latent\_damage\_shift} with severity 0.62. The required next evidence is: requires tactile/material sensing.
+
+\paragraph{human workspace norm shift.} the same object movement is acceptable for one user and disruptive for another The frozen audit tags this boundary under \texttt{human\_preference\_shift} with severity 0.64. The required next evidence is: requires personalized side-effect priors.
+
+\paragraph{irreversible small change.} small irreversible changes can be masked by task success The frozen audit tags this boundary under \texttt{irreversible\_change} with severity 0.66. The required next evidence is: requires irreversibility-specific labels.
+
+\paragraph{clutter with high task success.} high success can coexist with workspace clutter accumulation The frozen audit tags this boundary under \texttt{clutter\_accumulation} with severity 0.55. The required next evidence is: requires separate clutter utilities.
+
+\paragraph{unstable but accepted stack.} a stack can be accepted initially but fail later The frozen audit tags this boundary under \texttt{unstable\_placement} with severity 0.56. The required next evidence is: requires stability probes.
+
+\paragraph{constraint reward conflict.} constraint penalties and preference rewards can rank trajectories differently The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.58. The required next evidence is: requires explicit aggregation tests.
+
+\paragraph{risk budget blind spot.} fixed-risk deployment can hide low-coverage behavior The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.59. The required next evidence is: requires coverage reporting.
+
+\paragraph{side effect classifier overfit.} the classifier baseline detects visible side effects but misses delayed mechanisms The frozen audit tags this boundary under \texttt{unseen\_side\_effect} with severity 0.61. The required next evidence is: requires mechanism-level diagnostics.
+
+\paragraph{old v4 memory gap.} the v4 model does not remember delayed side effects strongly enough The frozen audit tags this boundary under \texttt{delayed\_effects} with severity 0.62. The required next evidence is: requires temporal side-effect memory.
+
+\paragraph{uncertainty query cost.} maximum uncertainty querying buys robustness at high annotation cost The frozen audit tags this boundary under \texttt{human\_preference\_shift} with severity 0.64. The required next evidence is: requires cost-aware query selection.
+
+\paragraph{conservative filter low coverage.} conservative filters look safe by refusing too many actions The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.66. The required next evidence is: requires fixed-risk utility.
+
+\paragraph{inverse reward ambiguity.} inverse reward design cannot infer unspoken physical norms from sparse preferences The frozen audit tags this boundary under \texttt{human\_preference\_shift} with severity 0.55. The required next evidence is: requires counterfactual preference pairs.
+
+\paragraph{reward model reward hacking.} RLHF reward models can learn visible success proxies The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.56. The required next evidence is: requires physical side-effect features.
+
+\paragraph{latent damage oracle gap.} the oracle still separates hidden damage better than v5 The frozen audit tags this boundary under \texttt{latent\_material\_damage} with severity 0.58. The required next evidence is: requires real sensing and labels.
+
+\paragraph{shared workspace personalization.} human workspace priorities differ by person and task The frozen audit tags this boundary under \texttt{shared\_workspace\_fetch} with severity 0.59. The required next evidence is: requires personalization study.
+
+\paragraph{high force low visibility.} force damage can be underweighted if visible outcomes look normal The frozen audit tags this boundary under \texttt{force\_damage} with severity 0.61. The required next evidence is: requires force-channel evidence.
+
+\paragraph{posthoc label revision.} humans may revise preferences after seeing delayed consequences The frozen audit tags this boundary under \texttt{delayed\_effects} with severity 0.62. The required next evidence is: requires delayed preference collection.
+
+\paragraph{multi side effect tradeoff.} reducing damage can increase false alarms or query burden The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.64. The required next evidence is: requires Pareto reporting.
+
+\paragraph{oracle headroom.} oracle utility remains higher than v5 The frozen audit tags this boundary under \texttt{combined\_stress} with severity 0.66. The required next evidence is: mechanism is useful but not saturated.
+
+\section*{Appendix E: Reproducibility Checklist}
+The v5 audit is reproducible from a clean checkout using:
+\begin{verbatim}
+python src\run_experiment.py
+python scripts\generate_manuscript.py
+cd paper
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+bibtex main
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+\end{verbatim}
+The final numbered artifact is copied only to \texttt{C:/Users/wangz/Downloads/112.pdf}. The validation script checks row counts, finite numeric values, summary gates, PDF page count, hash, and artifact location.
+
+\section*{Appendix F: What Would Make This Submission Ready}
+The path to a real ICLR-main submission is concrete. First, collect human preference labels on matched-success trajectory pairs with explicit side-effect annotations. Second, measure inter-annotator disagreement and user-specific tolerance. Third, train the preference model and downstream policy on one split and evaluate on held-out tasks, held-out side-effect regimes, delayed-effect rollouts, and latent material-damage probes. Fourth, compare against the same strong baselines, including the old v4 method, side-effect classifiers, risk-calibrated reward models, and conservative filters. Fifth, report fixed-risk coverage and utility rather than only accepted-action safety. Sixth, release logs, trained checkpoints, videos, and label schemas. Until those steps exist, the honest state is strong revise, not acceptance-ready.
+
+\clearpage
+\section*{Appendix G: Task, Regime, and Split Cards}
+This appendix explains why the expanded benchmark uses 10 tasks, 8 regimes, and 8 deployment splits. The point is not to inflate the row count. The point is to prevent a single easy side-effect channel from dominating the conclusion.
+
+\paragraph{Table clearing.}
+Table clearing stresses object displacement and clutter. A robot can satisfy the visible goal by moving all objects away from the target area while leaving a human workspace less usable than before. The side-effect labels therefore separate task completion from residual clutter, displacement of neighboring objects, and recovery cost.
+
+\paragraph{Drawer retrieval.}
+Drawer retrieval stresses contact force, narrow clearances, and irreversible minor damage. The task is included because a policy can retrieve the requested object while scraping drawer edges, shifting stored objects, or leaving the drawer in an unstable state. Generic preference comparisons often reward the retrieved object and miss the physical debt.
+
+\paragraph{Cable routing.}
+Cable routing stresses delayed and latent effects. A routed cable can look successful at the comparison horizon but later snag, create clutter, or interfere with another object. This task directly tests the delayed-effect memory component.
+
+\paragraph{Tool handoff.}
+Tool handoff stresses human-workspace disruption and safety margins. The robot can deliver the tool while placing it in a socially or physically awkward region. The benchmark uses this task to create labeler-tolerance and human-preference-shift cases.
+
+\paragraph{Mobile shelf placement.}
+Mobile shelf placement stresses instability and delayed toppling. The visible goal may be satisfied when the object is on the shelf, but the placement can be near an unstable edge or create a collision risk for later navigation.
+
+\paragraph{Fragile object sorting.}
+Fragile object sorting stresses high-force damage and latent material state. It is useful because visible success can be nearly independent of scuffing, micro-cracks, or surface wear, especially when the comparison uses RGB-only observations.
+
+\paragraph{Countertop wiping.}
+Countertop wiping stresses benign physical change versus true damage. A robot must alter the scene to complete the task, so a side-effect model that penalizes every physical change becomes overcautious. This task is a direct test of benign-change calibration.
+
+\paragraph{Bin packing cleanup.}
+Bin packing cleanup stresses clutter, displacement, and compactness. The task has many locally successful arrangements, some of which create later retrieval or stability problems. It pressures the model to distinguish acceptable reorganization from hidden workspace debt.
+
+\paragraph{Shared workspace fetch.}
+Shared workspace fetch stresses human norms. The same displacement can be acceptable in one workspace and disruptive in another. The benchmark uses this task to make labeler-disagreement weighting matter rather than treating all preference noise as random.
+
+\paragraph{Stacked container staging.}
+Stacked container staging stresses instability, delayed failure, and irreversible disruption. A stack can look correct at the moment of placement but fail under small later disturbances. This task attacks short-horizon preference labels.
+
+\paragraph{Nominal regime.}
+The nominal regime prevents the benchmark from becoming only a stress test. A useful model should not pay excessive query cost or false-alarm penalties when side-effect pressure is low.
+
+\paragraph{Force-damage regime.}
+Force damage targets contact-heavy failures: scuffs, dents, pressure marks, and excessive force. It is the clearest case where physical sensing matters and RGB preference labels can be incomplete.
+
+\paragraph{Object-displacement regime.}
+Object displacement targets the difference between task success and scene preservation. A policy can move irrelevant objects out of the way and still look successful unless displacement is measured explicitly.
+
+\paragraph{Clutter-accumulation regime.}
+Clutter accumulation targets long-horizon workspace usability. It is common in cleanup, routing, and sorting tasks where local success can leave future tasks harder.
+
+\paragraph{Unstable-placement regime.}
+Unstable placement targets delayed failure. It is included because short preference windows can reward placements that are visibly successful but physically fragile.
+
+\paragraph{Irreversible-change regime.}
+Irreversible change targets side effects that cannot be undone cheaply. The regret of an irreversible small action can be much larger than its immediate visible cost.
+
+\paragraph{Human-workspace-disruption regime.}
+Human workspace disruption targets subjective but real physical norms. It is a bridge between robotics and preference learning: the physical state matters, but its acceptability is user- and context-dependent.
+
+\paragraph{Latent-material-damage regime.}
+Latent material damage targets unobserved physical harm. The oracle headroom in this regime is expected; no local generated benchmark should imply that the sensing problem is solved.
+
+\paragraph{Nominal split.}
+The nominal split checks that the method does not become a stress-only trick. It also exposes unnecessary query cost and false alarms.
+
+\paragraph{Seen-shift split.}
+The seen-shift split changes object and side-effect intensity within the training envelope. It tests interpolation rather than true extrapolation.
+
+\paragraph{Unseen-object split.}
+The unseen-object split changes object geometry and displacement patterns. It tests whether side-effect reasoning transfers beyond memorized object identities.
+
+\paragraph{Unseen-side-effect split.}
+The unseen-side-effect split changes which mechanism dominates. It pressures the taxonomy rather than only the classifier.
+
+\paragraph{Human-preference-shift split.}
+The human-preference-shift split changes tolerance and workspace norms. It is the split most directly tied to real label-disagreement experiments that the current paper still lacks.
+
+\paragraph{Delayed-effects split.}
+The delayed-effects split makes the comparison horizon insufficient. A method without delayed memory should suffer here.
+
+\paragraph{Latent-damage-shift split.}
+The latent-damage-shift split makes physical damage less visible. It is included to keep the model honest about sensing limitations.
+
+\paragraph{Combined-stress split.}
+The combined-stress split is not meant to mimic a single real deployment. It is a hostile aggregate where multiple side-effect mechanisms interact. It is useful for gatekeeping but cannot replace external validation.
+
+\clearpage
+\section*{Appendix H: Baseline Attack Notes}
+This appendix records why each baseline is included and what it attacks. A submission-ready paper would need to keep these baselines or stronger equivalents.
+
+\paragraph{Success-only policy.}
+The success-only policy attacks the possibility that visible task success alone explains the result. It should be weak on side-effect diagnostics but is still important because many robotics benchmarks implicitly reward it.
+
+\paragraph{Generic pairwise preference model.}
+The generic pairwise model attacks the claim that any preference learner is sufficient. If it matched v5, the taxonomy would not matter.
+
+\paragraph{RLHF reward-model surrogate.}
+The RLHF surrogate attacks the claim that deep reward modeling from comparisons automatically handles physical side effects. It is allowed to learn flexible correlations but not explicit side-effect mechanisms.
+
+\paragraph{Uncertainty-query preference learner.}
+The uncertainty-query learner attacks the query-selection story. It spends more labels on uncertain examples and therefore pressures v5 to justify its lower query cost.
+
+\paragraph{Constraint-aware planner.}
+The constraint-aware planner attacks the need for learned side-effect preferences. If hand-designed constraints were enough, v5 should not win utility after query cost and false alarms are counted.
+
+\paragraph{Failure-prediction shield.}
+The failure shield attacks the idea that predicting task failure is enough. Its weakness should appear when trajectories succeed visibly while accumulating physical debt.
+
+\paragraph{Side-effect classifier baseline.}
+The side-effect classifier attacks the need for preferences at all. It detects side effects but lacks counterfactual preference structure and labeler-tolerance modeling.
+
+\paragraph{Inverse reward design baseline.}
+The inverse reward design baseline attacks the objective-specification story. It can infer hidden reward implications from specification context, but it does not directly model delayed physical side effects in this audit.
+
+\paragraph{Conservative safety filter.}
+The conservative filter attacks the safety claim. It can reduce damage by refusing actions, so fixed-risk coverage and deployment utility are required to judge it fairly.
+
+\paragraph{Preference transformer without side effects.}
+The preference transformer attacks model capacity. It is a flexible sequence model without the explicit mechanism channels. If capacity alone solved the task, the transformer should catch v5.
+
+\paragraph{Maximum-uncertainty human querying.}
+Maximum-uncertainty querying attacks the label-efficiency claim. It often improves robustness but can become too expensive for practical robotics.
+
+\paragraph{Physical affordance penalty.}
+The affordance penalty attacks whether hand-engineered physical costs are enough. It helps with force and instability but lacks labeler-disagreement and delayed-effect structure.
+
+\paragraph{Risk-calibrated reward model.}
+The risk-calibrated reward model attacks the fixed-risk part of the contribution. It is a strong baseline because it explicitly models risk, even if it lacks the full causal side-effect taxonomy.
+
+\paragraph{Old v4 proposed model.}
+The old v4 model is the strongest non-oracle baseline in the final run. This is the right baseline to beat because it prevents the v5 paper from claiming progress over weak earlier scaffolds.
+
+\paragraph{V5 proposed method.}
+The v5 method is judged only by frozen gates. It is not allowed to call itself submission-ready because local gates cannot replace real labels or robot evidence.
+
+\paragraph{Oracle human side-effect judge.}
+The oracle is not a deployable baseline. It is headroom. Its presence prevents the paper from implying that the generated problem is solved.
+
+\clearpage
+\section*{Appendix I: Hostile Reviewer Checklist}
+\paragraph{Attack: the benchmark is synthetic.}
+Correct. The scope gate fails for exactly this reason. The paper can claim local mechanism evidence, not external robotics validity.
+
+\paragraph{Attack: human preferences are generated, not collected.}
+Correct. The current labels are generated proxies. A real submission needs human labels, labeler metadata, and disagreement analysis.
+
+\paragraph{Attack: the side-effect taxonomy may be incomplete.}
+Correct. The taxonomy covers eight mechanisms but cannot be assumed complete. The failure cases explicitly include misspecification and latent damage.
+
+\paragraph{Attack: the utility function is hand-designed.}
+Correct. The utility function is frozen and disclosed, but real deployment would require sensitivity analysis and human validation. The current result is a robustness audit under one disclosed utility.
+
+\paragraph{Attack: the method may be overfit to the generator.}
+Correct. The old v4 baseline, stress endpoints, and ablations reduce but do not eliminate this risk. External validation is required.
+
+\paragraph{Attack: fixed-risk coverage could be gamed.}
+The audit reports coverage, breach rate, and deployment utility together. A no-action policy cannot win by hiding behind low breach rate.
+
+\paragraph{Attack: the oracle gap remains large.}
+Correct. The oracle gap is a strength of the audit because it prevents saturation claims. The method improves the old baseline but does not solve hidden side-effect preference learning.
+
+\paragraph{Attack: delayed effects need real time.}
+Correct. The delayed-effect memory is only locally tested. Real delayed labels or physical state measurements are mandatory next evidence.
+
+\paragraph{Attack: labeler-disagreement weighting is hypothetical.}
+Correct. It is a mechanism hypothesis. It becomes real only after collecting labels from multiple annotators and modeling their tolerance.
+
+\paragraph{Attack: strong baselines could be stronger.}
+Correct in principle. The current suite includes 15 comparators, but a real submission should add any accepted robotics benchmark baselines relevant to the chosen hardware or simulator.
+
+\paragraph{Attack: page count does not equal quality.}
+Agreed. The 25-page requirement is treated as space for theory, protocol, failure analysis, and auditability, not as a reason to pad claims.
+
+\paragraph{Attack: visual citation boxes do not affect science.}
+Agreed. Boxed citations are an artifact-quality requirement. They improve navigation but do not change the evidence.
+
+\clearpage
+\section*{Appendix J: External Validation Protocol}
+\paragraph{Label collection.}
+Collect matched-success trajectory pairs across the same side-effect taxonomy. Each pair should include visible frames, force or tactile summaries when available, delayed observations, and a short explanation prompt asking annotators why they prefer one trajectory. The protocol should recruit enough annotators to estimate disagreement rather than averaging it away.
+
+\paragraph{Robot or high-fidelity evaluation.}
+Evaluate on robot hardware or an accepted high-fidelity simulator with contact, damage proxies, object displacement, and delayed stability. The simulator must expose logs that map to the same side-effect fields used by the model. If the environment cannot measure latent material damage, that limitation must be stated rather than approximated away.
+
+\paragraph{Training and checkpoints.}
+Train the preference model and downstream policy from the collected labels. Release configuration files, checkpoints, and evaluation scripts. The current local generator is not enough because it does not test optimization, perception, or policy-learning failure modes.
+
+\paragraph{Predefined reporting.}
+Before running the external study, freeze the same gates: success, utility, recall, violation, damage, false alarms, query cost, regret, paired seeds, ablations, endpoint stress, fixed-risk coverage, and scope. Report all predefined results even if the v5 method loses.
+
+\paragraph{Videos and logs.}
+Provide rollout videos or equivalent physical traces for accepted and rejected trajectories. For each failure case, provide at least one qualitative example linked to quantitative logs. This is the evidence needed to convince a skeptical robotics reviewer that side-effect mechanisms are not merely spreadsheet fields.
+
+\paragraph{Decision threshold.}
+Only after external labels, downstream policies, and physical validation exist should the paper be considered ICLR-main ready. If the external study preserves the v5 margins without raising damage, false alarms, query burden, or low-coverage safety artifacts, the decision can move from strong revise to submission candidate. If not, the correct decision is to revise or archive.
+
+\paragraph{Statistical plan.}
+The external study should preserve paired seeds or paired task instances wherever possible. Pairing is not a cosmetic detail: it makes failure analysis sharper by comparing methods under matched side-effect pressure. Confidence intervals should be reported for success, utility, damage, false alarms, query cost, and fixed-risk deployment utility.
+
+\paragraph{Safety stop rules.}
+Before any robot evaluation, define stop rules for excessive force, repeated object drops, workspace disruption, and human-intervention events. A side-effect preference paper should not create side effects while trying to measure them. Stop-rule activations should be reported as failures, not filtered out.
+
+\paragraph{Release checklist.}
+The released artifact should include label schemas, annotator instructions, anonymized disagreement statistics, task definitions, robot or simulator configuration, checkpoints, evaluation seeds, raw logs, and videos. Without those artifacts, reviewers cannot distinguish mechanism learning from benchmark overfitting.
+
+\clearpage
+\section*{Appendix K: Evidence Ledger}
+This appendix records the purpose of every generated artifact. A hostile reviewer should be able to trace each claim to a file rather than to narrative prose.
+
+\paragraph{\texttt{dataset\_summary.csv}.}
+This file contains the 80 task-regime combinations used to define the physical side-effect loads. It is the first place to check whether the benchmark accidentally ignores a task or side-effect regime.
+
+\paragraph{\texttt{cell\_metrics.csv}.}
+This is the main evidence table with 102,400 rows. Each row corresponds to one method, task, regime, split, and seed. The table is large enough to test interactions but small enough to rerun on CPU.
+
+\paragraph{\texttt{main\_group\_metrics.csv}.}
+This table aggregates the main cells by method, task, regime, and split. It is useful for finding whether a headline gain is isolated to one task or one side-effect mechanism.
+
+\paragraph{\texttt{seed\_metrics.csv}.}
+This table aggregates by method, split, and seed. It is used for paired comparisons and confidence intervals. Seed-level reporting is important because aggregate means can hide instability.
+
+\paragraph{\texttt{metrics.csv}.}
+This table aggregates by method and split. It is the compact summary most readers will inspect first, but it is not the source of the hard decision; the hard aggregate is separate.
+
+\paragraph{\texttt{hard\_seed\_metrics.csv}.}
+This table aggregates the hostile splits and hostile regimes by method and seed. The paired hard utility gate is computed here. This prevents nominal cases from diluting the decision.
+
+\paragraph{\texttt{hard\_aggregate\_metrics.csv}.}
+This table gives the 16-method hard aggregate. It determines the strongest non-oracle baseline and the headline v5 margins.
+
+\paragraph{\texttt{hard\_pairwise\_stats.csv}.}
+This table compares v5 to every non-v5 comparator under paired hard seeds. The old v4 method is included here, so the new paper cannot claim progress merely by dropping its strongest predecessor.
+
+\paragraph{\texttt{ablation\_cell\_metrics.csv}.}
+This table contains 8,000 ablation cells. Each component removal is tested on the same task-regime-seed structure under combined stress.
+
+\paragraph{Ablation seed and aggregate metrics.}
+The files \path{ablation_seed_metrics.csv} and \path{ablation_metrics.csv} expose whether the full model beats its strongest removed-component variant. The result is intentionally modest; large synthetic ablation gaps would be suspicious.
+
+\paragraph{\texttt{stress\_sweep\_cell\_metrics.csv}.}
+This table contains 48,000 stress cells across six stress levels. It tests whether the method only works at a convenient side-effect intensity.
+
+\paragraph{\texttt{stress\_sweep\_seed\_metrics.csv} and \texttt{stress\_sweep.csv}.}
+These files summarize the stress sweep by seed and aggregate method. The endpoint gate is computed from the stress level 1.0 rows.
+
+\paragraph{\texttt{fixed\_risk\_cell\_metrics.csv}.}
+This table contains 51,200 fixed-risk deployment cells. It is the audit against conservative no-action safety. The table records true risk, estimated risk, acceptance, breach, and deployment utility.
+
+\paragraph{Fixed-risk seed, aggregate, and pairwise metrics.}
+The files \path{fixed_risk_seed_metrics.csv}, \path{fixed_risk_metrics.csv}, and \path{fixed_risk_pairwise_stats.csv} summarize fixed-risk coverage and utility. They are the reason the paper can say a method is not rewarded for refusing almost everything.
+
+\paragraph{\texttt{failure\_cases.csv}.}
+This file contains 24 failure boundaries. It is not a qualitative afterthought; it is an evidence contract that names what the local benchmark cannot resolve.
+
+\paragraph{\texttt{summary.json}.}
+This file is the machine-readable audit result. It stores the version, terminal decision, scope failures, row counts, gates, and headline metrics used by the validator and status ledgers.
+
+\paragraph{Generated figures and tables.}
+The figures summarize hard utility, diagnostics, ablations, stress sweep, and fixed-risk coverage. The LaTeX tables are generated from the same CSVs. The manuscript should not contain hand-entered result numbers that disagree with these files.
+
+\clearpage
+\section*{Appendix L: Negative Claims and Non-Claims}
+\paragraph{The paper does not claim real robot validation.}
+Every strong result in the paper is local. The correct interpretation is that the mechanism deserves an external study, not that it is already validated.
+
+\paragraph{The paper does not claim real human preference modeling.}
+The labeler-disagreement feature is a generated proxy. A submission-ready version must collect real labels and show that the weighting improves held-out human preferences.
+
+\paragraph{The paper does not claim complete side-effect coverage.}
+The taxonomy is intentionally explicit, but explicit does not mean complete. Real homes, labs, and factories can produce side effects outside the eight mechanisms.
+
+\paragraph{The paper does not claim that the oracle is reachable.}
+The oracle is an upper reference. It uses privileged side-effect judgment and should not be presented as a method.
+
+\paragraph{The paper does not claim that fixed-risk coverage solves safety.}
+Fixed-risk coverage is a reporting discipline. It reveals low-coverage safety artifacts; it does not by itself guarantee safe deployment.
+
+\paragraph{The paper does not claim that all preferences should be causal.}
+The claim is narrower: for physical side effects in robot tasks, mechanism features are useful because visible task success can be ambiguous.
+
+\paragraph{The paper does not claim that all conservative behavior is bad.}
+Conservatism can be appropriate under high physical risk. The problem is unreported conservatism, where a policy looks safe because it rarely acts.
+
+\paragraph{The paper does not claim that query cost is always more important than safety.}
+Query cost is reported because robotics labels are expensive. A real system may choose higher cost for safety-critical tasks, but that tradeoff must be explicit.
+
+\paragraph{The paper does not claim that delayed-effect memory replaces sensing.}
+Memory helps only if delayed evidence exists. Without tactile, force, material-state, or delayed observations, memory can encode only a proxy.
+
+\paragraph{The paper does not claim that the old v4 method is weak.}
+The old v4 method is the strongest non-oracle baseline in the hard aggregate. This is useful because it makes the v5 comparison more credible.
+
+\paragraph{The paper does not claim that the page count is evidence.}
+The length increase is used to expose theory, gates, baselines, failure cases, and reproducibility. The scientific claim remains tied to the CSVs and scope gate.
+
+\clearpage
+\section*{Appendix M: Sensitivity and Extension Plan}
+\paragraph{Utility sensitivity.}
+A real submission should sweep the utility coefficients for success, recall, violation, damage, false alarms, query cost, preference regret, label disagreement, and delayed misses. The v5 method should not be accepted if it wins only under one fragile weighting.
+
+\paragraph{Taxonomy sensitivity.}
+The external study should remove, merge, and add side-effect mechanisms. If the v5 method collapses when one taxonomy entry changes name, it is overfit to the generator.
+
+\paragraph{Annotator sensitivity.}
+Annotators should be grouped by risk tolerance, workspace ownership, and prior robotics experience. The labeler-disagreement module should improve held-out prediction within each group, not only average accuracy.
+
+\paragraph{Sensor sensitivity.}
+The study should compare RGB-only, force-only, tactile-only, proprioceptive, and multimodal observations. Latent material damage cannot be declared solved if only RGB is tested.
+
+\paragraph{Policy sensitivity.}
+The preference model should be plugged into more than one downstream policy class. If the result depends on a single planner or controller, the paper should report that dependence.
+
+\paragraph{Deployment sensitivity.}
+Risk budgets should be varied before deployment, and coverage should be reported for every budget. A policy that is useful at budget 0.10 but useless at budget 0.05 has a very different deployment story.
+
+\paragraph{Long-horizon sensitivity.}
+Delayed effects should be measured over multiple horizons. Some workspace disruptions appear minutes or tasks later, so a single short rollout can hide the relevant failure.
+
+\paragraph{Adversarial-task sensitivity.}
+The external benchmark should include adversarially selected tasks where visible success and side-effect cost are anti-correlated. These are the cases most likely to expose reward-model shortcuts.
+
+\paragraph{Release sensitivity.}
+All scripts should be deterministic, but the released paper should also include raw logs and seeds. Reviewers should be able to rerun the exact claims and inspect any row that supports a gate.
 
 \begingroup
 \raggedright

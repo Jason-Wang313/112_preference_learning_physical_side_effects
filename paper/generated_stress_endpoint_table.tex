@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\caption{Endpoint stress sweep at side-effect stress level 1.0.}
+\label{tab:stress-endpoint}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+Method & Succ. & Util. & Recall & Damage & Regret \\
+\midrule
+OracleHumanJudge & 0.699 & 0.775 & 0.628 & 0.030 & 0.000 \\
+CausalSideEffectV5 & 0.619 & 0.678 & 0.588 & 0.042 & 0.097 \\
+OldV4Proposed & 0.588 & 0.610 & 0.520 & 0.053 & 0.165 \\
+RiskCalReward & 0.555 & 0.557 & 0.451 & 0.062 & 0.218 \\
+AffordPenalty & 0.535 & 0.512 & 0.409 & 0.063 & 0.263 \\
+MaxUncQuery & 0.523 & 0.497 & 0.440 & 0.077 & 0.278 \\
+SideEffectCls & 0.523 & 0.492 & 0.401 & 0.074 & 0.283 \\
+ConservativeFilter & 0.508 & 0.480 & 0.400 & 0.056 & 0.295 \\
+Constraint & 0.501 & 0.451 & 0.343 & 0.072 & 0.324 \\
+RLHF & 0.480 & 0.391 & 0.252 & 0.103 & 0.384 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

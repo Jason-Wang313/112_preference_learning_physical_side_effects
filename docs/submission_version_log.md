@@ -1,32 +1,15 @@
 # Submission Version Log
 
-## v3
+## v5_expanded - 2026-06-23
 
-Decision: KILL_ARCHIVE
+- Replaced v4.1 local benchmark with expanded causal side-effect preference audit.
+- Added `side_effect_causal_preference_model_v5`.
+- Kept `proposed_side_effect_preference_model_v4` as the strongest non-oracle baseline.
+- Generated 102,400 main cells, 8,000 ablation cells, 48,000 stress cells, 51,200 fixed-risk cells, and 24 failure cases.
+- Generated a 25-page ICLR-style PDF with bright boxed clickable citations.
+- Added manuscript and validation scripts.
+- Final decision: STRONG_REVISE; ICLR main ready: no.
 
-Reason: synthetic/template evidence and no real or high-fidelity validation.
+## v4.1 - 2026-06-15
 
-## v4
-
-Decision: STRONG_REVISE
-
-Changes:
-- Added physical side-effect preference benchmark.
-- Added success-only, generic preference, RLHF, uncertainty-query, constraint, failure-shield, and side-effect classifier baselines.
-- Added paired-seed success tests.
-- Added side-effect, damage, false-alarm, and query-cost gates.
-- Added ablations, stress sweep, failure cases, figures, and generated tables.
-- Rewrote manuscript and docs around a narrow physical side-effect preference claim.
-
-Remaining blocker: no real human-label or robot validation.
-
-## v4.1
-
-Decision: STRONG_REVISE
-
-Changes:
-- Reran the experiment with low-RAM thread caps.
-- Expanded `stress_sweep_seed_metrics.csv` from seed-level aggregation to 7,350 task/regime/seed rows.
-- Expanded `failure_cases.csv` from 4 to 8 concrete boundaries.
-- Re-audited row counts, finite numerics, strongest-baseline comparison, paired seeds, ablation margin, stress sweep, and artifact rules.
-- Preserved the honest non-ready decision because real human-label and robot/high-fidelity evidence are still absent.
+- Local continuation audit supported development but remained non-ready due to missing real human-label and robot validation.

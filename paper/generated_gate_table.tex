@@ -1,0 +1,26 @@
+\begin{table}[t]
+\centering
+\caption{Frozen local v5 gates. The external scope gate is separate and fails.}
+\label{tab:gates}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrr}
+\toprule
+Gate & Threshold & Observed & Pass \\
+\midrule
+Hard success margin & $\geq 0.030$ & 0.03607 & True \\
+Hard utility margin & $\geq 0.050$ & 0.07187 & True \\
+Recall delta & $\geq 0.050$ or violation $\leq -0.030$ & 0.06755 & True \\
+Violation delta & $\leq -0.030$ alternative & -0.01735 & True \\
+Damage delta & $\leq 0$ & -0.01309 & True \\
+False alarm delta & $\leq 0$ & -0.01943 & True \\
+Query cost delta & $\leq 0$ & -0.01485 & True \\
+Preference regret delta & $\leq 0$ & -0.01079 & True \\
+Paired hard utility wins & $\geq 8/10$ & 10 & True \\
+Ablation utility margin & $\geq 0.040$ or success $\geq 0.010$ & 0.03881 & True \\
+Stress endpoint utility margin & $\geq 0.050$ & 0.06804 & True \\
+Strict fixed-risk coverage & $0.300 \leq$ coverage $< 0.950$ & 0.84000 & True \\
+Strict fixed-risk utility margin & $> 0$ & 0.41944 & True \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
